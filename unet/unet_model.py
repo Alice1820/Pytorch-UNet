@@ -33,4 +33,5 @@ class UNet(nn.Module):
         x = self.up3(x, x2)
         x = self.up4(x, x1)
         logits = self.outc(x)
+        # print (logits.shape) # [1, 13, 480, 640]
         return logits

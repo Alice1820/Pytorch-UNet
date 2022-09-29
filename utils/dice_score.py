@@ -3,14 +3,23 @@ from torch import Tensor
 
 
 def dice_coeff(input: Tensor, target: Tensor, reduce_batch_first: bool = False, epsilon=1e-6):
+    # print (input.shape)
+    # print (target.shape)    
     # Average of Dice coefficient for all batches, or for a single mask
     assert input.size() == target.size()
     if input.dim() == 2 and reduce_batch_first:
         raise ValueError(f'Dice: asked to reduce batch but got tensor without batch dimension (shape {input.shape})')
 
     if input.dim() == 2 or reduce_batch_first:
-        inter = torch.dot(input.reshape(-1), target.reshape(-1))
+        # input = input.reshape(-1)
+        # target = target.reshape(-1)
+        # print (input) # 2, 13, 480, 640
+        # print (target)
+        # inter = torch.dot(input, target)
+        inter = torch.sum(input * target)
+        # inter = torch.dot(input.view(-1), target.view(-1))
         sets_sum = torch.sum(input) + torch.sum(target)
+        # print (sets_sum)
         if sets_sum.item() == 0:
             sets_sum = 2 * inter
 
@@ -38,3 +47,4 @@ def dice_loss(input: Tensor, target: Tensor, multiclass: bool = False):
     assert input.size() == target.size()
     fn = multiclass_dice_coeff if multiclass else dice_coeff
     return 1 - fn(input, target, reduce_batch_first=True)
+    # return 1 - fn(input, target, reduce_batch_first=False)

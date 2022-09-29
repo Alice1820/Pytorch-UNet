@@ -1,4 +1,5 @@
 import logging
+import os
 from os import listdir
 from os.path import splitext
 from pathlib import Path
@@ -34,6 +35,7 @@ class BasicDataset(Dataset):
         img_ndarray = np.asarray(pil_img)
 
         if not is_mask:
+        # if is_mask:
             if img_ndarray.ndim == 2:
                 img_ndarray = img_ndarray[np.newaxis, ...]
             else:
@@ -61,7 +63,7 @@ class BasicDataset(Dataset):
         assert len(img_file) == 1, f'Either no image or multiple images found for the ID {name}: {img_file}'
         assert len(mask_file) == 1, f'Either no mask or multiple masks found for the ID {name}: {mask_file}'
         mask = self.load(mask_file[0])
-        img = self.load(img_file[0])
+        img = self.load(img_file[0]) 
 
         assert img.size == mask.size, \
             f'Image and mask {name} should be the same size, but are {img.size} and {mask.size}'
@@ -71,10 +73,22 @@ class BasicDataset(Dataset):
 
         return {
             'image': torch.as_tensor(img.copy()).float().contiguous(),
-            'mask': torch.as_tensor(mask.copy()).long().contiguous()
+            'mask': torch.as_tensor(mask.copy()).long().contiguous(),
+            'name': name
         }
 
 
 class CarvanaDataset(BasicDataset):
     def __init__(self, images_dir, masks_dir, scale=1):
         super().__init__(images_dir, masks_dir, scale, mask_suffix='_mask')
+
+class NYUDataset(BasicDataset):
+    def __init__(self, images_dir, masks_dir, modal='image', stage='train', scale=1):
+        images_dir = os.path.join(images_dir, modal, stage)
+        masks_dir = os.path.join(masks_dir, stage)
+        super().__init__(images_dir, masks_dir, scale)
+
+def prepare_nyu_datasets(args):
+    train_set = NYUDataset(images_dir=args.dir_name, masks_dir=args.dir_mask, modal=args.modal, stage='train')
+    val_set = NYUDataset(images_dir=args.dir_name, masks_dir=args.dir_mask, modal=args.modal, stage='test')
+    return train_set, val_set
